@@ -1,25 +1,46 @@
-import pygame, sys
-
-# Initialization
-pygame.init()
+import pygame, sys, random
+from player import Miner
+from gem import Gem
+from bomb import Bomb
+from Heart import Heart
 
 WIDTH = 1200
 HEIGHT = 800
 
-characterOption = 'Images/miner1.png'
+gemsNumber = 2
+gemWidth = 50
+gemHeight = 50
+
+adder = True
+
+bombsNumber = gemsNumber - 1
+bombWidth = gemWidth
+bombHeight = gemHeight
+
+minerHeight, minerWidth = 120, 120
+
+characterOption = 'Images/miner1.png'  # default option
+
+# Initialization
+pygame.init()
 
 # window
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Diamond Collector')
-
 window_icon = pygame.image.load('Images/window_icon.png')
 pygame.display.set_icon(window_icon)
 
 font = pygame.font.SysFont('Arial', 40)
 
+# Sounds
+
+gemCatchSound = pygame.mixer.Sound('Sounds/mixkit-game-ball-tap-2073.wav')
+bombCatchSound = pygame.mixer.Sound('Sounds/mixkit-player-jumping-in-a-video-game-2043.wav')
+pygame.mixer.music.load('Sounds/Child\'s Nightmare.ogg')
+
 
 def draw_text(text, font, color, surface, x, y):
-    textobj = font.render(text, 1, color)
+    textobj = font.render(text, True, color)
     textrect = textobj.get_rect()
     textrect.topleft = (x, y)
     surface.blit(textobj, textrect)
@@ -79,7 +100,7 @@ def options():
 
 def button(screen, position, text, fontSize):
     font = pygame.font.SysFont("Arial", fontSize)
-    text_render = font.render(text, 1, (255, 0, 0))
+    text_render = font.render(text, True, (255, 0, 0))
     x, y, w, h = position
     pygame.draw.line(screen, (150, 150, 150), (x, y), (x + w, y), 5)
     pygame.draw.line(screen, (150, 150, 150), (x, y - 2), (x, y + h), 5)
@@ -104,15 +125,15 @@ def main_menu():
 
         mx, my = pygame.mouse.get_pos()
 
-        button_width = 200
-        button_height = 50
+        buttonWidth = 200
+        buttonHeight = 50
 
         playButton = button(screen,
-                            ((WIDTH - button_width) / 2, (HEIGHT - button_height) / 2, button_width, button_height),
-                            "Play", button_height - 10)
+                            ((WIDTH - buttonWidth) / 2, (HEIGHT - buttonHeight) / 2, buttonWidth, buttonHeight),
+                            "Play", buttonHeight - 10)
         quitButton = button(screen, (
-        (WIDTH - button_width) / 2, (HEIGHT - button_height) / 2 + 100, button_width, button_height), "Options",
-                            button_height - 10)
+            (WIDTH - buttonWidth) / 2, (HEIGHT - buttonHeight) / 2 + 100, buttonWidth, buttonHeight), "Options",
+                            buttonHeight - 10)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -132,32 +153,123 @@ def main_menu():
 
 
 def Game():
+    global gemsNumber
+    global bombsNumber
+    global adder
+
+    background = pygame.image.load('Images/wall2.png')
+    background = pygame.transform.scale(background, (WIDTH, HEIGHT)).convert_alpha()
+
+    pygame.mixer.music.play(-1)
+    scoreFont = pygame.font.SysFont('Arial', 30)
     score = 0
-    screen.fill((0, 0, 0))
-    # miner
+    lives = 3
+    clock = pygame.time.Clock()
 
-    miner = pygame.image.load(characterOption)
-    miner_height, miner_width = 120, 120
+    player = Miner(characterOption, WIDTH / 2, HEIGHT - minerHeight / 2, minerWidth, minerHeight)
+    miner = pygame.sprite.Group()
+    print(player.rect.x, player.rect.y)
+    miner.add(player)
 
-    miner = pygame.transform.scale(miner, (miner_height, miner_width))
+    bonusLife = pygame.sprite.Group()
+    gems = pygame.sprite.Group()
+    bombs = pygame.sprite.Group()
+    adder = True
+
+    # add 'gemsNumber' gems in gems
+
+    for _ in range(bombsNumber):
+        x = random.randrange(bombWidth, WIDTH - bombWidth)
+        y = random.randrange(-120, -90)
+        bombs.add(Bomb('Images/bomb.png', x, y, bombHeight, bombWidth))
+
+    for _ in range(gemsNumber):
+        x = random.randrange(0, WIDTH - gemWidth)
+        y = random.randrange(-65, -45)
+
+        print(x, y)
+        gems.add(Gem('Images/gem.png', x, y, gemHeight, gemWidth))
 
     # game loop
+
     running = True
     while running:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        pygame.mouse.set_visible(False)
 
-        screen.fill((102, 113, 62))
-        screen.blit(miner, (mouse_x - 60, HEIGHT - 120))
-        pygame.display.update()
-
+        screen.blit(background, (0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    pygame.mixer.music.stop()
                     running = False
+
+        for gem in gems:
+            if pygame.sprite.collide_rect(gem, player):
+                gem.rect.y = random.randrange(-80, -35)
+                gem.rect.x = random.randrange(gemWidth, WIDTH - gemWidth)
+                gemCatchSound.play()
+                score += 1
+                adder = True
+
+        for bomb in bombs:
+            if pygame.sprite.collide_rect(bomb, player):
+                bomb.rect.y = random.randrange(-120, -90)
+                bomb.rect.x = random.randrange(bombWidth, WIDTH - bombWidth)
+                bombCatchSound.play()
+                lives -= 1
+
+                if lives == 0:
+                    pygame.mixer.music.stop()
+                    gemsNumber = 2
+                    bombsNumber = 1
+                    running = False
+
+                adder = True
+        for life in bonusLife:
+            if pygame.sprite.collide_rect(life, player):
+                life.rect.y = random.randrange(-80, -35)
+                life.rect.x = random.randrange(gemWidth, WIDTH - gemWidth)
+                gemCatchSound.play()
+                lives += 1
+                bonusLife.empty()
+                adder = True
+            if life.rect.y > HEIGHT - 80 and pygame.sprite.collide_rect(life, player) == False:
+                life.rect.y = random.randrange(-80, -35)
+                life.rect.x = random.randrange(gemWidth, WIDTH - gemWidth)
+                bonusLife.empty()
+                adder = True
+
+        if score > 1 and score % 10 == 0 and adder:
+            x = random.randrange(0, WIDTH - gemWidth)
+            y = random.randrange(-65, -45)
+
+            gems.add(Gem('Images/gem.png', x, y, gemHeight, gemWidth))
+            gemsNumber += 1
+
+            if score % 20 == 0 and adder:
+                bombs.add(Bomb('Images/bomb.png', x, y, bombHeight, bombWidth))
+                bombsNumber += 1
+
+            if score > 1 and score % 30 == 0 and adder:
+                x = random.randrange(0, WIDTH - gemWidth)
+                y = random.randrange(-65, -45)
+                bonusLife.add(Heart('Images/like.png', x, y, gemHeight, gemWidth))
+            adder = False
+
+        miner.update()
+        gems.update()
+        bombs.update()
+        bonusLife.update()
+        miner.draw(screen)
+        gems.draw(screen)
+        bombs.draw(screen)
+        bonusLife.draw(screen)
+        draw_text("Score: " + str(score), scoreFont, (255, 255, 255), screen, WIDTH - 120, 20)
+        draw_text('Lives: ' + str(lives), scoreFont, (255, 255, 255), screen, WIDTH - 120, 50)
+        pygame.display.update()
+        clock.tick(120)
 
 
 main_menu()
