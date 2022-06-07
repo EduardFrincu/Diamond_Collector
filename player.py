@@ -9,6 +9,7 @@ class Miner(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (minerWidth,minerHeight))
+
         self.rect = self.image.get_rect()
         self.rect.center = (x,y)
     def update(self, *args, **kwargs) -> None:

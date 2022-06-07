@@ -1,4 +1,6 @@
-import pygame, sys, random
+import pygame
+import sys
+import random
 from player import Miner
 from gem import Gem
 from bomb import Bomb
@@ -30,13 +32,15 @@ pygame.display.set_caption('Diamond Collector')
 window_icon = pygame.image.load('Images/window_icon.png')
 pygame.display.set_icon(window_icon)
 
-font = pygame.font.SysFont('Arial', 40)
+font = pygame.font.SysFont('goudystout', 40)
 
 # Sounds
 
-gemCatchSound = pygame.mixer.Sound('Sounds/mixkit-game-ball-tap-2073.wav')
-bombCatchSound = pygame.mixer.Sound('Sounds/mixkit-player-jumping-in-a-video-game-2043.wav')
+gemCatchedSound = pygame.mixer.Sound('Sounds/mixkit-game-ball-tap-2073.wav')
+bombCatchedSound = pygame.mixer.Sound('Sounds/mixkit-player-jumping-in-a-video-game-2043.wav')
 pygame.mixer.music.load('Sounds/Child\'s Nightmare.ogg')
+buttonPressedSound = pygame.mixer.Sound('Sounds/button_select.mp3')
+pygame.mixer.music.set_volume(0.07)
 
 
 def draw_text(text, font, color, surface, x, y):
@@ -45,38 +49,83 @@ def draw_text(text, font, color, surface, x, y):
     textrect.topleft = (x, y)
     surface.blit(textobj, textrect)
 
+def button(surface, position, text, fontSize):
+    font = pygame.font.SysFont('goudystout', fontSize)
+    text_render = font.render(text, True, (255, 255, 255))
+    x, y, w, h = position
+    pygame.draw.line(surface, (150, 150, 150), (x, y), (x + w, y), 5)
+    pygame.draw.line(surface, (150, 150, 150), (x, y - 2), (x, y + h), 5)
+    pygame.draw.line(surface, (50, 50, 50), (x, y + h), (x + w, y + h), 5)
+    pygame.draw.line(surface, (50, 50, 50), (x + w, y + h), [x + w, y], 5)
+    pygame.draw.rect(surface, (100, 100, 100), (x, y, w, h))
+
+    return surface.blit(text_render, (x, y))
+
 
 def options():
     global characterOption
     characterOption = 'Images/miner1.png'
+
+    background = pygame.image.load('Images/wall1.png')
+    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+
+    check = pygame.image.load('Images/check.png')
+    check = pygame.transform.scale(check, (50,50)).convert_alpha()
+
+    miner1 = pygame.image.load('Images/miner1.png')
+    miner2 = pygame.image.load('Images/miner2.png')
+    miner3 = pygame.image.load('Images/miner3.png')
+
+    miner_height, miner_width = 150, 150
+    miner1 = pygame.transform.scale(miner1, (miner_height, miner_width)).convert_alpha()
+    miner2 = pygame.transform.scale(miner2, (miner_height, miner_width)).convert_alpha()
+    miner3 = pygame.transform.scale(miner3, (miner_height, miner_width)).convert_alpha()
+
+    miner1Button = miner1.get_rect()
+    miner2Button = miner1.get_rect()
+    miner3Button = miner1.get_rect()
+
+    miner1Button.topleft = ((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2)
+    miner2Button.topleft = ((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2)
+    miner3Button.topleft = ((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2)
+
+    screen.blit(miner1, ((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2))
+    screen.blit(miner2, ((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2))
+    screen.blit(miner3, ((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2))
+
+    draw_text('Options', font, (255, 255, 255), screen, 20, 20)
+
     running = True
     while running:
 
-        screen.fill((102, 113, 62))
         pygame.mouse.set_visible(True)
-        draw_text('Options', font, (255, 255, 255), screen, 20, 20)
-
-        miner1 = pygame.image.load('Images/miner1.png')
-        miner2 = pygame.image.load('Images/miner2.png')
-        miner3 = pygame.image.load('Images/miner3.png')
-
-        miner_height, miner_width = 150, 150
-        miner1 = pygame.transform.scale(miner1, (miner_height, miner_width))
-        miner2 = pygame.transform.scale(miner2, (miner_height, miner_width))
-        miner3 = pygame.transform.scale(miner3, (miner_height, miner_width))
-
-        miner1Button = pygame.Rect(((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2), (150, 150))
-        miner2Button = pygame.Rect(((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2), (150, 150))
-        miner3Button = pygame.Rect(((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2), (150, 150))
-
-        screen.blit(miner1, ((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2))
-        screen.blit(miner2, ((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2))
-        screen.blit(miner3, ((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2))
-
         mx, my = pygame.mouse.get_pos()
 
-        dark = pygame.Surface((150, 150), flags=pygame.SRCALPHA)
-        dark.fill((50, 50, 50, 0))
+
+        if characterOption == 'Images/miner1.png':
+            screen.blit(background, (0, 0))
+            draw_text('Options', font, (255, 255, 255), screen, 20, 20)
+            screen.blit(miner1, ((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2))
+            screen.blit(miner2, ((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2))
+            screen.blit(miner3, ((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2))
+            screen.blit(check, ((WIDTH - miner_width/2) / 2, (HEIGHT - miner_height) / 2 + 150))
+
+        if characterOption == 'Images/miner2.png':
+            screen.blit(background, (0, 0))
+            draw_text('Options', font, (255, 255, 255), screen, 20, 20)
+            screen.blit(miner1, ((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2))
+            screen.blit(miner2, ((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2))
+            screen.blit(miner3, ((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2))
+            screen.blit(check, ((WIDTH - miner_width/2) / 2 - 200, (HEIGHT - miner_height) / 2 + 150))
+
+        if characterOption == 'Images/miner3.png':
+            screen.blit(background, (0, 0))
+            draw_text('Options', font, (255, 255, 255), screen, 20, 20)
+            screen.blit(miner1, ((WIDTH - miner_width) / 2, (HEIGHT - miner_height) / 2))
+            screen.blit(miner2, ((WIDTH - miner_width) / 2 - 200, (HEIGHT - miner_height) / 2))
+            screen.blit(miner3, ((WIDTH - miner_width) / 2 + 200, (HEIGHT - miner_height) / 2))
+            screen.blit(check, ((WIDTH - miner_width / 2) / 2 + 200, (HEIGHT - miner_height) / 2 + 150))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -85,30 +134,18 @@ def options():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if miner1Button.collidepoint((mx, my)):
                     characterOption = 'Images/miner1.png'
-                    print(characterOption)
+                    buttonPressedSound.play()
                 if miner2Button.collidepoint((mx, my)):
                     characterOption = 'Images/miner2.png'
-                    print(characterOption)
+                    buttonPressedSound.play()
                 if miner3Button.collidepoint((mx, my)):
                     characterOption = 'Images/miner3.png'
-                    print(characterOption)
+                    buttonPressedSound.play()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
         pygame.display.update()
 
-
-def button(screen, position, text, fontSize):
-    font = pygame.font.SysFont("Arial", fontSize)
-    text_render = font.render(text, True, (255, 0, 0))
-    x, y, w, h = position
-    pygame.draw.line(screen, (150, 150, 150), (x, y), (x + w, y), 5)
-    pygame.draw.line(screen, (150, 150, 150), (x, y - 2), (x, y + h), 5)
-    pygame.draw.line(screen, (50, 50, 50), (x, y + h), (x + w, y + h), 5)
-    pygame.draw.line(screen, (50, 50, 50), (x + w, y + h), [x + w, y], 5)
-    pygame.draw.rect(screen, (100, 100, 100), (x, y, w, h))
-
-    return screen.blit(text_render, (x, y))
 
 
 def main_menu():
@@ -120,7 +157,7 @@ def main_menu():
         background = pygame.transform.scale(background, (WIDTH, HEIGHT))
         screen.blit(background, (0, 0))
 
-        draw_text('Main menu', font, (255, 255, 255), screen, (WIDTH + HEIGHT) / 4, 20)
+        draw_text('Diamond Collector', font, (255, 255, 255), screen, WIDTH / 2 - 40 * 9, 20)
         pygame.mouse.set_visible(True)
 
         mx, my = pygame.mouse.get_pos()
@@ -131,8 +168,9 @@ def main_menu():
         playButton = button(screen,
                             ((WIDTH - buttonWidth) / 2, (HEIGHT - buttonHeight) / 2, buttonWidth, buttonHeight),
                             "Play", buttonHeight - 10)
-        quitButton = button(screen, (
-            (WIDTH - buttonWidth) / 2, (HEIGHT - buttonHeight) / 2 + 100, buttonWidth, buttonHeight), "Options",
+        optionsButton = button(screen, (
+            (WIDTH - buttonWidth) / 2 - 63, (HEIGHT - buttonHeight) / 2 + 100, buttonWidth + 126, buttonHeight),
+                            "Options",
                             buttonHeight - 10)
 
         for event in pygame.event.get():
@@ -145,8 +183,10 @@ def main_menu():
                     sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if playButton.collidepoint((mx, my)):
+                    buttonPressedSound.play()
                     Game()
-                if quitButton.collidepoint((mx, my)):
+                if optionsButton.collidepoint((mx, my)):
+                    buttonPressedSound.play()
                     options()
 
         pygame.display.update()
@@ -157,18 +197,18 @@ def Game():
     global bombsNumber
     global adder
 
-    background = pygame.image.load('Images/wall2.png')
+    background = pygame.image.load('Images/cave2.webp')
     background = pygame.transform.scale(background, (WIDTH, HEIGHT)).convert_alpha()
 
     pygame.mixer.music.play(-1)
     scoreFont = pygame.font.SysFont('Arial', 30)
+
     score = 0
     lives = 3
     clock = pygame.time.Clock()
 
     player = Miner(characterOption, WIDTH / 2, HEIGHT - minerHeight / 2, minerWidth, minerHeight)
     miner = pygame.sprite.Group()
-    print(player.rect.x, player.rect.y)
     miner.add(player)
 
     bonusLife = pygame.sprite.Group()
@@ -179,16 +219,10 @@ def Game():
     # add 'gemsNumber' gems in gems
 
     for _ in range(bombsNumber):
-        x = random.randrange(bombWidth, WIDTH - bombWidth)
-        y = random.randrange(-120, -90)
-        bombs.add(Bomb('Images/bomb.png', x, y, bombHeight, bombWidth))
+        bombs.add(Bomb('Images/bomb.png', bombHeight, bombWidth))
 
     for _ in range(gemsNumber):
-        x = random.randrange(0, WIDTH - gemWidth)
-        y = random.randrange(-65, -45)
-
-        print(x, y)
-        gems.add(Gem('Images/gem.png', x, y, gemHeight, gemWidth))
+        gems.add(Gem('Images/gem.png', gemHeight, gemWidth))
 
     # game loop
 
@@ -202,6 +236,8 @@ def Game():
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    gemsNumber = 2
+                    bombsNumber = 1
                     pygame.mixer.music.stop()
                     running = False
 
@@ -209,7 +245,8 @@ def Game():
             if pygame.sprite.collide_rect(gem, player):
                 gem.rect.y = random.randrange(-80, -35)
                 gem.rect.x = random.randrange(gemWidth, WIDTH - gemWidth)
-                gemCatchSound.play()
+                gem.speed = random.randrange(1, 6)
+                gemCatchedSound.play()
                 score += 1
                 adder = True
 
@@ -217,13 +254,15 @@ def Game():
             if pygame.sprite.collide_rect(bomb, player):
                 bomb.rect.y = random.randrange(-120, -90)
                 bomb.rect.x = random.randrange(bombWidth, WIDTH - bombWidth)
-                bombCatchSound.play()
+                bomb.speed = random.randrange(1, 6)
+                bombCatchedSound.play()
                 lives -= 1
 
                 if lives == 0:
                     pygame.mixer.music.stop()
                     gemsNumber = 2
                     bombsNumber = 1
+                    game_over()
                     running = False
 
                 adder = True
@@ -231,7 +270,7 @@ def Game():
             if pygame.sprite.collide_rect(life, player):
                 life.rect.y = random.randrange(-80, -35)
                 life.rect.x = random.randrange(gemWidth, WIDTH - gemWidth)
-                gemCatchSound.play()
+                gemCatchedSound.play()
                 lives += 1
                 bonusLife.empty()
                 adder = True
@@ -242,20 +281,15 @@ def Game():
                 adder = True
 
         if score > 1 and score % 10 == 0 and adder:
-            x = random.randrange(0, WIDTH - gemWidth)
-            y = random.randrange(-65, -45)
-
-            gems.add(Gem('Images/gem.png', x, y, gemHeight, gemWidth))
+            gems.add(Gem('Images/gem.png', gemHeight, gemWidth))
             gemsNumber += 1
 
             if score % 20 == 0 and adder:
-                bombs.add(Bomb('Images/bomb.png', x, y, bombHeight, bombWidth))
+                bombs.add(Bomb('Images/bomb.png', bombHeight, bombWidth))
                 bombsNumber += 1
 
             if score > 1 and score % 30 == 0 and adder:
-                x = random.randrange(0, WIDTH - gemWidth)
-                y = random.randrange(-65, -45)
-                bonusLife.add(Heart('Images/like.png', x, y, gemHeight, gemWidth))
+                bonusLife.add(Heart('Images/like.png', gemHeight, gemWidth))
             adder = False
 
         miner.update()
@@ -272,4 +306,48 @@ def Game():
         clock.tick(120)
 
 
+def game_over():
+    background = pygame.image.load('Images/wall1.png')
+    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+
+
+    gameOverMiner = pygame.image.load('Images/game_over_miner.png')
+    gameOverMiner = pygame.transform.scale(gameOverMiner, (120, 120))
+
+    screen.blit(gameOverMiner, (800, 400))
+    
+
+    while True:
+        buttonWidth = 300
+        buttonHeight = 50
+        playAgainButton = button(screen, ((WIDTH - buttonWidth) / 2 - 75, (HEIGHT - buttonHeight) / 2 , buttonWidth + 150, buttonHeight),
+                            "Play Again", buttonHeight - 10)
+        mainMenuButton = button(screen, (
+        (WIDTH - buttonWidth) / 2 - 70, (HEIGHT - buttonHeight) / 2 + 100, buttonWidth + 140, buttonHeight), "Main Menu",
+                            buttonHeight - 10)
+
+        pygame.mouse.set_visible(True)
+        mx, my = pygame.mouse.get_pos()
+
+        draw_text('Game over', font, (255, 255, 255), screen, WIDTH / 2 - 40*5, 20)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if playAgainButton.collidepoint((mx, my)):
+                    buttonPressedSound.play()
+                    Game()
+                if mainMenuButton.collidepoint((mx, my)):
+                    buttonPressedSound.play() 
+                    main_menu()
+
+        pygame.display.update()
+
 main_menu()
+
